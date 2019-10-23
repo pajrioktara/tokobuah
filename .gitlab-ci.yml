@@ -1,0 +1,32 @@
+variables:
+  TEST_NAME: registry.gitlab.com/oktara/tokobuah-codeigniter:$CI_COMMIT_REF_NAME
+
+stages:
+  - build
+  - run
+
+build:
+    stage: build
+    script:
+        - docker login -u pajri.jsa@gmail.com -p $runnerPass registry.gitlab.com
+        - docker build -t $TEST_NAME .
+        - docker push $TEST_NAME
+    only:
+        - master
+    tags:
+        - build
+    when: on_success
+        
+production:
+    stage: run
+    script:
+        - docker login -u pajri.jsa@gmail.com -p $runnerPass registry.gitlab.com
+        - docker pull $TEST_NAME
+        - docker kill tokobuah-codeigniter || true
+        - docker rm tokobuah-codeigniter || true
+        - docker run -dt -p 80:80 --name tokobuah-codeigniter $TEST_NAME
+    only:
+        - master
+    tags:
+        - run
+    when: on_success
